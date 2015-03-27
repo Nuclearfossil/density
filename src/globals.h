@@ -117,6 +117,25 @@
         op_d;\
         break;
 
+#define DENSITY_CASE_GENERATOR_8(op_a, flag_a, op_b, flag_b, op_c, flag_c, op_d, flag_d, op_e, flag_e, op_f, flag_f, op_g, flag_g, op_h, flag_h, op_mid, shift)\
+    case ((flag_h << (shift * 7)) | (flag_g << (shift * 6)) | (flag_f << (shift * 5)) | (flag_e << (shift * 4)) | (flag_d << (shift * 3)) | (flag_c << (shift * 2)) | (flag_b << shift) | flag_a):\
+        op_a;\
+        op_mid;\
+        op_b;\
+        op_mid;\
+        op_c;\
+        op_mid;\
+        op_d;\
+        op_mid;\
+        op_e;\
+        op_mid;\
+        op_f;\
+        op_mid;\
+        op_g;\
+        op_mid;\
+        op_h;\
+        break;
+
 #define DENSITY_CASE_GENERATOR_4_2_LAST_1_COMBINED(op_1, flag_1, op_a, flag_a, op_b, flag_b, op_c, flag_c, op_d, flag_d, op_mid, shift)\
     DENSITY_CASE_GENERATOR_2(op_1, flag_1, op_a, flag_a, op_mid, shift);\
     DENSITY_CASE_GENERATOR_2(op_1, flag_1, op_b, flag_b, op_mid, shift);\
@@ -128,6 +147,54 @@
     DENSITY_CASE_GENERATOR_4_2_LAST_1_COMBINED(op_b, flag_b, op_a, flag_a, op_b, flag_b, op_c, flag_c, op_d, flag_d, op_mid, shift);\
     DENSITY_CASE_GENERATOR_4_2_LAST_1_COMBINED(op_c, flag_c, op_a, flag_a, op_b, flag_b, op_c, flag_c, op_d, flag_d, op_mid, shift);\
     DENSITY_CASE_GENERATOR_4_2_LAST_1_COMBINED(op_d, flag_d, op_a, flag_a, op_b, flag_b, op_c, flag_c, op_d, flag_d, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_4_LAST_1_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_4(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_a, flag_a, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_4(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_4_LAST_2_COMBINED(op_1, flag_1, op_2, flag_2, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_4_LAST_1_COMBINED(op_1, flag_1, op_2, flag_2, op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_4_LAST_1_COMBINED(op_1, flag_1, op_2, flag_2, op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_4_LAST_3_COMBINED(op_1, flag_1, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_4_LAST_2_COMBINED(op_1, flag_1, op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_4_LAST_2_COMBINED(op_1, flag_1, op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_4_COMBINED(op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_4_LAST_3_COMBINED(op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_4_LAST_3_COMBINED(op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_8_LAST_1_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_5, flag_5, op_6, flag_6, op_7, flag_7, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_8(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_5, flag_5, op_6, flag_6, op_7, flag_7, op_a, flag_a, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_8(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_5, flag_5, op_6, flag_6, op_7, flag_7, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_8_LAST_2_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_5, flag_5, op_6, flag_6, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_8_LAST_1_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_5, flag_5, op_6, flag_6, op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_8_LAST_1_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_5, flag_5, op_6, flag_6, op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_8_LAST_3_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_5, flag_5, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_8_LAST_2_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_5, flag_5, op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_8_LAST_2_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_5, flag_5, op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_8_LAST_4_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_8_LAST_3_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_8_LAST_3_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_4, flag_4, op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_8_LAST_5_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_8_LAST_4_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_8_LAST_4_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_8_LAST_6_COMBINED(op_1, flag_1, op_2, flag_2, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_8_LAST_5_COMBINED(op_1, flag_1, op_2, flag_2, op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_8_LAST_5_COMBINED(op_1, flag_1, op_2, flag_2, op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_8_LAST_7_COMBINED(op_1, flag_1, op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_8_LAST_6_COMBINED(op_1, flag_1, op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_8_LAST_6_COMBINED(op_1, flag_1, op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
+
+#define DENSITY_CASE_GENERATOR_2_8_COMBINED(op_a, flag_a, op_b, flag_b, op_mid, shift)\
+    DENSITY_CASE_GENERATOR_2_8_LAST_7_COMBINED(op_a, flag_a, op_a, flag_a, op_b, flag_b, op_mid, shift);\
+    DENSITY_CASE_GENERATOR_2_8_LAST_7_COMBINED(op_b, flag_b, op_a, flag_a, op_b, flag_b, op_mid, shift);
 
 #define DENSITY_CASE_GENERATOR_4_4_LAST_1_COMBINED(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_a, flag_a, op_b, flag_b, op_c, flag_c, op_d, flag_d, op_mid, shift)\
     DENSITY_CASE_GENERATOR_4(op_1, flag_1, op_2, flag_2, op_3, flag_3, op_a, flag_a, op_mid, shift);\
