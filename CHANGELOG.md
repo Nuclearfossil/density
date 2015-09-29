@@ -1,3 +1,55 @@
+0.12.5 beta
+-----------
+*June 20, 2015*
+
+* Added conditional main footer read/write
+* Improved teleport staging buffer management
+* Regression - a minimum buffer output size has to be ensured to avoid signature loss
+* Modified the minimum lookahead and the resulting minimum buffer size in the API
+* Lion : corrected a signature interception problem due to an increase in process unit size
+* Lion : corrected chunk count conditions for new block / mode marker detection
+* Lion : modified end of stream marker conditions
+* Stability fixes and improvements
+
+0.12.4 beta
+-----------
+*May 25, 2015*
+
+* Removed remaining undefined behavior potential occurences
+* Implemented parallelizable decompressible output block header reads/writes (disabled by default)
+
+0.12.3 beta
+-----------
+*May 20, 2015*
+
+* New lion algorithm, faster and more efficient
+* Compiler specific optimizations
+* Switched to premake 5 to benefit from link time optimizations
+* Various fixes and improvements
+
+0.12.2 beta
+-----------
+*May 4, 2015*
+
+* Added an integrated in-memory benchmark
+* Better Windows compatibility
+* Fixed misaligned load/stores
+* Switched to the premake build system
+* Performance optimizations (pointers, branches, loops ...)
+* Various fixes and improvements
+
+0.12.1 beta
+-----------
+*April 3, 2015*
+
+* Better unrolling readability and efficiency
+* Improved read speed of dictionary/predictions entries
+* Implemented case generators in cheetah to speed up decoding by using less branches
+* Added signatures interception in lion to cancel the need for large output buffers
+* Improved lion decode speed with specific form data access and use of ctz in form read
+* Enabled decompression to exact-sized buffer for all algorithms
+* Various fixes and improvements
+
 0.12.0 beta
 -----------
 *March 24, 2015*

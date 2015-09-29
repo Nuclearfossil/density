@@ -6,25 +6,28 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Centaurean nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *     1. Redistributions of source code must retain the above copyright notice, this
+ *        list of conditions and the following disclaimer.
+ *
+ *     2. Redistributions in binary form must reproduce the above copyright notice,
+ *        this list of conditions and the following disclaimer in the documentation
+ *        and/or other materials provided with the distribution.
+ *
+ *     3. Neither the name of the copyright holder nor the names of its
+ *        contributors may be used to endorse or promote products derived from
+ *        this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * 11/10/13 02:01
  */
@@ -35,20 +38,18 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <stddef.h>
 
-#if defined(__INTEL_COMPILER)
-#define DENSITY_FORCE_INLINE __forceinline
-#elif defined(_MSC_VER)
-#define DENSITY_FORCE_INLINE __forceinline
-#elif defined(__GNUC__)
-#define DENSITY_FORCE_INLINE inline __attribute__((always_inline))
-#elif defined(__clang__)
-#define DENSITY_FORCE_INLINE inline __attribute__((always_inline))
-#else
-#warning Impossible to force functions inlining. Expect performance issues.
+#include "density_api.h"
+
+#if !defined(__clang__) && !defined(__GNUC__)
+#error Unsupported compiler.
 #endif
+
+#define DENSITY_FORCE_INLINE    inline __attribute__((always_inline))
+
+#define DENSITY_MEMCPY          __builtin_memcpy
+#define DENSITY_MEMMOVE         __builtin_memmove
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define DENSITY_LITTLE_ENDIAN_64(b)   ((uint64_t)b)
@@ -161,6 +162,14 @@
 
 #define density_bitsizeof(x) (8 * sizeof(x))
 
+#define DENSITY_MASK_0_32    (uint32_t)0xFFFFFFFF
+#define DENSITY_MASK_16_32   (uint32_t)0xFFFF0000
+#define DENSITY_MASK_32_64   (uint64_t)0xFFFFFFFF00000000llu
+
+DENSITY_WINDOWS_EXPORT uint8_t density_version_major();
+DENSITY_WINDOWS_EXPORT uint8_t density_version_minor();
+DENSITY_WINDOWS_EXPORT uint8_t density_version_revision();
+
 
 /**********************************************************************************************************************
  *                                                                                                                    *
@@ -173,7 +182,7 @@
 
 #define DENSITY_MAJOR_VERSION   0
 #define DENSITY_MINOR_VERSION   12
-#define DENSITY_REVISION        1
+#define DENSITY_REVISION        5
 
 /*
  * Compile-time switches useful for pure data encoding and decoding

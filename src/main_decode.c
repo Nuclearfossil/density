@@ -6,32 +6,36 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Centaurean nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *     1. Redistributions of source code must retain the above copyright notice, this
+ *        list of conditions and the following disclaimer.
+ *
+ *     2. Redistributions in binary form must reproduce the above copyright notice,
+ *        this list of conditions and the following disclaimer in the documentation
+ *        and/or other materials provided with the distribution.
+ *
+ *     3. Neither the name of the copyright holder nor the names of its
+ *        contributors may be used to endorse or promote products derived from
+ *        this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * 19/10/13 00:06
  */
 
 #include "main_decode.h"
+#include "main_header.h"
 
-DENSITY_FORCE_INLINE DENSITY_DECODE_STATE exitProcess(density_decode_state *state, DENSITY_DECODE_PROCESS process, DENSITY_DECODE_STATE decodeState) {
+DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_exit_process(density_decode_state *state, DENSITY_DECODE_PROCESS process, DENSITY_DECODE_STATE decodeState) {
     state->process = process;
     return decodeState;
 }
@@ -61,14 +65,14 @@ DENSITY_FORCE_INLINE void density_decode_update_totals(density_memory_teleport *
     state->totalWritten += outAvailableBefore - out->available_bytes;
 }
 
-DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_init(density_memory_teleport *in, density_decode_state *restrict state, void *(*mem_alloc)(size_t)) {
+DENSITY_WINDOWS_EXPORT DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_init(density_memory_teleport *in, density_decode_state *restrict state, void *(*mem_alloc)(size_t)) {
     DENSITY_DECODE_STATE decodeState;
     state->totalRead = 0;
     state->totalWritten = 0;
 
 #if DENSITY_WRITE_MAIN_HEADER == DENSITY_YES
     if ((decodeState = density_decode_read_header(in, state)))
-        return exitProcess(state, DENSITY_DECODE_PROCESS_READ_HEADER, decodeState);
+        return density_decode_exit_process(state, DENSITY_DECODE_PROCESS_READ_HEADER, decodeState);
 #endif
 
     switch (state->header.compressionMode) {
@@ -92,10 +96,10 @@ DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_init(density_memory_tel
             return DENSITY_DECODE_STATE_ERROR;
     }
 
-    return exitProcess(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_READY);
+    return density_decode_exit_process(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_READY);
 }
 
-DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_continue(density_memory_teleport *restrict in, density_memory_location *restrict out, density_decode_state *restrict state) {
+DENSITY_WINDOWS_EXPORT DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_continue(density_memory_teleport *restrict in, density_memory_location *restrict out, density_decode_state *restrict state) {
     DENSITY_BLOCK_DECODE_STATE blockDecodeState;
     uint_fast64_t inAvailableBefore;
     uint_fast64_t outAvailableBefore;
@@ -118,11 +122,11 @@ DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_continue(density_memory
         case DENSITY_BLOCK_DECODE_STATE_READY:
             break;
         case DENSITY_BLOCK_DECODE_STATE_STALL_ON_INPUT:
-            return exitProcess(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_STALL_ON_INPUT);
+            return density_decode_exit_process(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_STALL_ON_INPUT);
         case DENSITY_BLOCK_DECODE_STATE_STALL_ON_OUTPUT:
-            return exitProcess(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_STALL_ON_OUTPUT);
+            return density_decode_exit_process(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_STALL_ON_OUTPUT);
         case DENSITY_BLOCK_DECODE_STATE_INTEGRITY_CHECK_FAIL:
-            return exitProcess(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_INTEGRITY_CHECK_FAIL);
+            return density_decode_exit_process(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_INTEGRITY_CHECK_FAIL);
         case DENSITY_BLOCK_DECODE_STATE_ERROR:
             return DENSITY_DECODE_STATE_ERROR;
     }
@@ -130,7 +134,7 @@ DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_continue(density_memory
     goto read_blocks;
 }
 
-DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_finish(density_memory_teleport *restrict in, density_memory_location *restrict out, density_decode_state *restrict state, void (*mem_free)(void *)) {
+DENSITY_WINDOWS_EXPORT DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_finish(density_memory_teleport *restrict in, density_memory_location *restrict out, density_decode_state *restrict state, void (*mem_free)(void *)) {
     DENSITY_DECODE_STATE decodeState;
     DENSITY_BLOCK_DECODE_STATE blockDecodeState;
     uint_fast64_t inAvailableBefore;
@@ -156,19 +160,20 @@ DENSITY_FORCE_INLINE DENSITY_DECODE_STATE density_decode_finish(density_memory_t
         case DENSITY_BLOCK_DECODE_STATE_READY:
             break;
         case DENSITY_BLOCK_DECODE_STATE_STALL_ON_OUTPUT:
-            return exitProcess(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_STALL_ON_OUTPUT);
+            return density_decode_exit_process(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_STALL_ON_OUTPUT);
         case DENSITY_BLOCK_DECODE_STATE_INTEGRITY_CHECK_FAIL:
-            return exitProcess(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_INTEGRITY_CHECK_FAIL);
+            return density_decode_exit_process(state, DENSITY_DECODE_PROCESS_READ_BLOCKS, DENSITY_DECODE_STATE_INTEGRITY_CHECK_FAIL);
         default:
             return DENSITY_DECODE_STATE_ERROR;
     }
 
     read_footer:
-#if DENSITY_WRITE_MAIN_FOOTER == DENSITY_YES
+#if DENSITY_WRITE_MAIN_FOOTER == DENSITY_YES && DENSITY_ENABLE_PARALLELIZABLE_DECOMPRESSIBLE_OUTPUT == DENSITY_YES
     if ((decodeState = density_decode_read_footer(in, state)))
         return decodeState;
 #endif
-    mem_free(state->blockDecodeState.kernelDecodeState);
+    if (state->header.compressionMode != DENSITY_COMPRESSION_MODE_COPY)
+        mem_free(state->blockDecodeState.kernelDecodeState);
 
     return DENSITY_DECODE_STATE_READY;
 }

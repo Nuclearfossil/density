@@ -6,25 +6,28 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Centaurean nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *     1. Redistributions of source code must retain the above copyright notice, this
+ *        list of conditions and the following disclaimer.
+ *
+ *     2. Redistributions in binary form must reproduce the above copyright notice,
+ *        this list of conditions and the following disclaimer in the documentation
+ *        and/or other materials provided with the distribution.
+ *
+ *     3. Neither the name of the copyright holder nor the names of its
+ *        contributors may be used to endorse or promote products derived from
+ *        this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * 25/12/14 17:08
  */
@@ -35,9 +38,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#if defined(_WIN64) || defined(_WIN32)
+#define DENSITY_WINDOWS_EXPORT __declspec(dllexport)
+#else
+#define DENSITY_WINDOWS_EXPORT
+#endif
+
 /***********************************************************************************************************************
  *                                                                                                                     *
- * Structures useful for the API                                                                                       *
+ * API data structures                                                                                                 *
  *                                                                                                                     *
  ***********************************************************************************************************************/
 
@@ -59,8 +68,8 @@ typedef enum {
 
 typedef enum {
     DENSITY_BUFFER_STATE_OK = 0,                                        // Everything went alright
-    DENSITY_BUFFER_STATE_ERROR_OUTPUT_BUFFER_TOO_SMALL,                 // output buffer size is too small
-    DENSITY_BUFFER_STATE_ERROR_DURING_PROCESSING,                       // error during processing
+    DENSITY_BUFFER_STATE_ERROR_OUTPUT_BUFFER_TOO_SMALL,                 // Output buffer size is too small
+    DENSITY_BUFFER_STATE_ERROR_DURING_PROCESSING,                       // Error during processing
     DENSITY_BUFFER_STATE_ERROR_INTEGRITY_CHECK_FAIL                     // Integrity check has failed
 } DENSITY_BUFFER_STATE;
 
@@ -72,10 +81,10 @@ typedef struct {
 
 typedef enum {
     DENSITY_STREAM_STATE_READY = 0,                                     // Awaiting further instructions (new action or adding data to the input buffer)
-    DENSITY_STREAM_STATE_STALL_ON_INPUT,                                // there is not enough space left in the input buffer to continue
-    DENSITY_STREAM_STATE_STALL_ON_OUTPUT,                               // there is not enough space left in the output buffer to continue
-    DENSITY_STREAM_STATE_ERROR_OUTPUT_BUFFER_TOO_SMALL,                 // output buffer size is too small
-    DENSITY_STREAM_STATE_ERROR_INVALID_INTERNAL_STATE,                  // error during processing
+    DENSITY_STREAM_STATE_STALL_ON_INPUT,                                // There is not enough space left in the input buffer to continue
+    DENSITY_STREAM_STATE_STALL_ON_OUTPUT,                               // There is not enough space left in the output buffer to continue
+    DENSITY_STREAM_STATE_ERROR_OUTPUT_BUFFER_TOO_SMALL,                 // Output buffer size is too small
+    DENSITY_STREAM_STATE_ERROR_INVALID_INTERNAL_STATE,                  // Error during processing
     DENSITY_STREAM_STATE_ERROR_INTEGRITY_CHECK_FAIL                     // Integrity check has failed
 } DENSITY_STREAM_STATE;
 

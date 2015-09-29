@@ -6,25 +6,28 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Centaurean nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *     1. Redistributions of source code must retain the above copyright notice, this
+ *        list of conditions and the following disclaimer.
+ *
+ *     2. Redistributions in binary form must reproduce the above copyright notice,
+ *        this list of conditions and the following disclaimer in the documentation
+ *        and/or other materials provided with the distribution.
+ *
+ *     3. Neither the name of the copyright holder nor the names of its
+ *        contributors may be used to endorse or promote products derived from
+ *        this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * 24/10/13 12:01
  *
@@ -41,17 +44,9 @@
 
 #include "kernel_chameleon_encode.h"
 
-DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE exitProcess(density_chameleon_encode_state *state, DENSITY_CHAMELEON_ENCODE_PROCESS process, DENSITY_KERNEL_ENCODE_STATE kernelEncodeState) {
+DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_exit_process(density_chameleon_encode_state *state, DENSITY_CHAMELEON_ENCODE_PROCESS process, DENSITY_KERNEL_ENCODE_STATE kernelEncodeState) {
     state->process = process;
     return kernelEncodeState;
-}
-
-DENSITY_FORCE_INLINE void density_chameleon_encode_write_to_signature(density_chameleon_encode_state *state) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    (state->proximitySignature) |= ((uint64_t) DENSITY_CHAMELEON_SIGNATURE_FLAG_MAP) << state->shift;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    (state->proximitySignature) |= ((uint64_t) DENSITY_CHAMELEON_SIGNATURE_FLAG_MAP) << ((56 - (state->shift & ~0x7)) + (state->shift & 0x7));
-#endif
 }
 
 DENSITY_FORCE_INLINE void density_chameleon_encode_prepare_new_signature(density_memory_location *restrict out, density_chameleon_encode_state *restrict state) {
@@ -59,6 +54,7 @@ DENSITY_FORCE_INLINE void density_chameleon_encode_prepare_new_signature(density
     state->shift = 0;
     state->signature = (density_chameleon_signature *) (out->pointer);
     state->proximitySignature = 0;
+    state->signature_copied_to_memory = false;
 
     out->pointer += sizeof(density_chameleon_signature);
     out->available_bytes -= sizeof(density_chameleon_signature);
@@ -83,7 +79,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_prepar
             if (state->resetCycle)
                 state->resetCycle--;
             else {
-                density_chameleon_dictionary_reset();
+                density_chameleon_dictionary_reset(&state->dictionary);
 
                 state-> resetCycle = DENSITY_DICTIONARY_PREFERRED_RESET_CYCLE - 1;
             }
@@ -103,7 +99,10 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_check_
 
     switch (state->shift) {
         case density_bitsizeof(density_chameleon_signature):
-            *(state->signature) = state->proximitySignature;
+            if(density_likely(!state->signature_copied_to_memory)) {  // Avoid dual copying in case of mode reversion
+                DENSITY_MEMCPY(state->signature, &state->proximitySignature, sizeof(density_chameleon_signature));
+                state->signature_copied_to_memory = true;
+            }
             if ((returnState = density_chameleon_encode_prepare_new_block(out, state)))
                 return returnState;
             break;
@@ -114,40 +113,46 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_check_
     return DENSITY_KERNEL_ENCODE_STATE_READY;
 }
 
-DENSITY_FORCE_INLINE void density_chameleon_encode_kernel(density_memory_location *restrict out, uint32_t *restrict hash, const uint32_t chunk, density_chameleon_encode_state *restrict state) {
-    DENSITY_CHAMELEON_HASH_ALGORITHM(*hash, DENSITY_LITTLE_ENDIAN_32(chunk));
-    density_chameleon_dictionary_entry *found = &state->dictionary.entries[*hash];
+DENSITY_FORCE_INLINE void density_chameleon_encode_kernel(density_memory_location *restrict out, const uint16_t hash, const uint32_t chunk, const uint_fast8_t shift, density_chameleon_encode_state *restrict state) {
+    density_chameleon_dictionary_entry *const found = &state->dictionary.entries[hash];
 
-    if (chunk ^ *(uint32_t*)found) {
+    if (chunk ^ found->as_uint32_t) {
         found->as_uint32_t = chunk;
-        *(uint32_t *) (out->pointer) = chunk;
+        DENSITY_MEMCPY(out->pointer, &chunk, sizeof(uint32_t));
         out->pointer += sizeof(uint32_t);
     } else {
-        density_chameleon_encode_write_to_signature(state);
-        *(uint16_t *) (out->pointer) = DENSITY_LITTLE_ENDIAN_16(*hash);
+        state->proximitySignature |= ((uint64_t)DENSITY_CHAMELEON_SIGNATURE_FLAG_MAP << shift);
+        DENSITY_MEMCPY(out->pointer, &hash, sizeof(uint16_t));
         out->pointer += sizeof(uint16_t);
     }
-
-    state->shift++;
 }
 
-DENSITY_FORCE_INLINE void density_chameleon_encode_process_chunk(uint64_t *chunk, density_memory_location *restrict in, density_memory_location *restrict out, uint32_t *restrict hash, density_chameleon_encode_state *restrict state) {
-    *chunk = *(uint64_t *) (in->pointer);
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    density_chameleon_encode_kernel(out, hash, (uint32_t) (*chunk), state);
+DENSITY_FORCE_INLINE void density_chameleon_encode_process_unit(density_memory_location *restrict in, density_memory_location *restrict out, density_chameleon_encode_state *restrict state) {
+    uint32_t chunk;
+    uint_fast8_t count = 0;
+
+#ifdef __clang__
+    for (uint_fast8_t count_b = 0; count_b < 32; count_b++) {
+        DENSITY_UNROLL_2(\
+            DENSITY_MEMCPY(&chunk, in->pointer, sizeof(uint32_t));\
+            density_chameleon_encode_kernel(out, DENSITY_CHAMELEON_HASH_ALGORITHM(chunk), chunk, count++, state);\
+            in->pointer += sizeof(uint32_t);\
+        );
+    }
+#else
+    for (uint_fast8_t count_b = 0; count_b < 16; count_b++) {
+        DENSITY_UNROLL_4(\
+            DENSITY_MEMCPY(&chunk, in->pointer, sizeof(uint32_t));\
+            density_chameleon_encode_kernel(out, DENSITY_CHAMELEON_HASH_ALGORITHM(chunk), chunk, count++, state);\
+            in->pointer += sizeof(uint32_t);\
+        );
+    }
 #endif
-    density_chameleon_encode_kernel(out, hash, (uint32_t) (*chunk >> density_bitsizeof(uint32_t)), state);
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    density_chameleon_encode_kernel(out, hash, (uint32_t)(*chunk), state);
-#endif
-    in->pointer += sizeof(uint64_t);
+
+    state->shift = density_bitsizeof(density_chameleon_signature);
 }
 
-DENSITY_FORCE_INLINE void density_chameleon_encode_process_unit(uint64_t *chunk, density_memory_location *restrict in, density_memory_location *restrict out, uint32_t *restrict hash, density_chameleon_encode_state *restrict state) {
-    DENSITY_UNROLL_16(density_chameleon_encode_process_chunk(chunk, in, out, hash, state));
-}
-
-DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_init(density_chameleon_encode_state *state) {
+DENSITY_WINDOWS_EXPORT DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_init(density_chameleon_encode_state *state) {
     state->signaturesCount = 0;
     state->efficiencyChecked = 0;
     density_chameleon_dictionary_reset(&state->dictionary);
@@ -156,19 +161,11 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_init(d
     state->resetCycle = DENSITY_DICTIONARY_PREFERRED_RESET_CYCLE - 1;
 #endif
 
-    return exitProcess(state, DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK, DENSITY_KERNEL_ENCODE_STATE_READY);
+    return density_chameleon_encode_exit_process(state, DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK, DENSITY_KERNEL_ENCODE_STATE_READY);
 }
 
-#define DENSITY_CHAMELEON_ENCODE_CONTINUE
-#define GENERIC_NAME(name) name ## continue
+#include "kernel_chameleon_encode_template.h"
 
-#include "kernel_chameleon_generic_encode.h"
+#define DENSITY_CHAMELEON_ENCODE_FINISH
 
-#undef GENERIC_NAME
-#undef DENSITY_CHAMELEON_ENCODE_CONTINUE
-
-#define GENERIC_NAME(name) name ## finish
-
-#include "kernel_chameleon_generic_encode.h"
-
-#undef GENERIC_NAME
+#include "kernel_chameleon_encode_template.h"
