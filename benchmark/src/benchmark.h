@@ -32,6 +32,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <time.h>
+#include "../../src/density_api.h"
+#include "../libs/cputime/src/cputime_api.h"
+#include "../libs/spookyhash/src/spookyhash_api.h"
 
 #if defined(_WIN64) || defined(_WIN32)
 #else
@@ -52,13 +56,13 @@
 #define DENSITY_BENCHMARK_COMPILER_VERSION        __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__
 #elif defined(_MSC_VER)
 #define DENSITY_BENCHMARK_COMPILER                "MSVC"
-#define DENSITY_BENCHMARK_COMPILER_VERSION
+#define DENSITY_BENCHMARK_COMPILER_VERSION		  ""
 #elif defined(__INTEL_COMPILER)
 #define DENSITY_BENCHMARK_COMPILER                "ICC"
-#define DENSITY_BENCHMARK_COMPILER_VERSION
+#define DENSITY_BENCHMARK_COMPILER_VERSION		  ""
 #else
 #define DENSITY_BENCHMARK_COMPILER                "an unknown compiler"
-#define DENSITY_BENCHMARK_COMPILER_VERSION
+#define DENSITY_BENCHMARK_COMPILER_VERSION		  ""
 #endif
 
 #if defined(_WIN64) || defined(_WIN32)
@@ -70,7 +74,7 @@
 #elif TARGET_OS_IPHONE
 #define DENSITY_BENCHMARK_PLATFORM_STRING         "iOS"
 #elif TARGET_OS_MAC
-#define DENSITY_BENCHMARK_PLATFORM_STRING         "Mac OS/X"
+#define DENSITY_BENCHMARK_PLATFORM_STRING         "MacOS"
 #else
 #define DENSITY_BENCHMARK_PLATFORM_STRING         "an unknown Apple platform"
 #endif
@@ -86,10 +90,6 @@
 #define DENSITY_BENCHMARK_PLATFORM_STRING         "an unknown platform"
 #endif
 
-#include "../../src/density_api.h"
-#include "cputime/src/cputime.h"
-
-#define DENSITY_CHRONO_MICROSECONDS         1000000.0
 #define DENSITY_ESCAPE_CHARACTER            ((char)27)
 
 #ifdef DENSITY_BENCHMARK_ALLOW_ANSI_ESCAPE_SEQUENCES
@@ -121,6 +121,9 @@
                                                 DENSITY_BENCHMARK_BOLD(printf("Thank you !\n"));\
                                             }\
                                             fflush(stdout);\
-                                            exit(0);
+                                            exit(EXIT_FAILURE);
 
 #endif
+
+#define DENSITY_BENCHMARK_HASH_SEED_1       0x0123456789abcdefllu
+#define DENSITY_BENCHMARK_HASH_SEED_2       0xfedcba9876543210llu
